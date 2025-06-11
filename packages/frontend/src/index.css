@@ -20,4 +20,44 @@
   .btn-secondary {
     @apply bg-gray-200 text-gray-800 hover:bg-gray-300;
   }
+}
+
+/* Calendar Styles */
+.calendar-container {
+  position: relative;
+  z-index: 0;
+}
+
+.fc {
+  height: calc(100vh - 12rem) !important;
+}
+
+.fc .fc-toolbar {
+  @apply flex-wrap gap-4 mb-4;
+}
+
+.fc .fc-button {
+  @apply bg-primary-600 hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active {
+  @apply bg-primary-800;
+}
+
+.fc .fc-daygrid-day:hover {
+  @apply bg-gray-50;
+}
+
+.fc .fc-event {
+  @apply cursor-pointer hover:brightness-95;
+}
+
+.fc .fc-event-title {
+  @apply font-medium;
+}
+
+/* Modal Styles */
+.modal-backdrop {
+  @apply fixed inset-0 bg-black bg-opacity-50 z-50;
 } 

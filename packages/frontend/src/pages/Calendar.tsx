@@ -1,30 +1,134 @@
 import { useState, useEffect } from 'react'
-import { CalendarIcon, PlusIcon } from '@heroicons/react/24/outline'
+import FullCalendar from '@fullcalendar/react'
+import dayGridPlugin from '@fullcalendar/daygrid'
+import timeGridPlugin from '@fullcalendar/timegrid'
+import interactionPlugin from '@fullcalendar/interaction'
+import { EventInput, DateSelectArg, EventClickArg } from '@fullcalendar/core'
 import axios from 'axios'
 
-interface CalendarEvent {
-  id: string
-  summary: string
-  description?: string
-  start: {
-    dateTime: string
-    timeZone: string
+interface EventModalProps {
+  isOpen: boolean
+  onClose: () => void
+  event?: {
+    id?: string
+    title: string
+    start: string
+    end: string
+    description?: string
   }
-  end: {
-    dateTime: string
-    timeZone: string
+  onSave: (event: Omit<EventInput, 'id'>) => void
+  onDelete?: () => void
+}
+
+function EventModal({ isOpen, onClose, event, onSave, onDelete }: EventModalProps) {
+  const [title, setTitle] = useState(event?.title || '')
+  const [start, setStart] = useState(event?.start || '')
+  const [end, setEnd] = useState(event?.end || '')
+  const [description, setDescription] = useState(event?.description || '')
+
+  useEffect(() => {
+    if (event) {
+      setTitle(event.title)
+      setStart(event.start)
+      setEnd(event.end)
+      setDescription(event.description || '')
+    }
+  }, [event])
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    onSave({
+      title,
+      start,
+      end,
+      extendedProps: { description }
+    })
+    onClose()
   }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md relative">
+        <h2 className="text-xl font-bold mb-4">
+          {event?.id ? 'Edit Event' : 'Create Event'}
+        </h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Title</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Start</label>
+            <input
+              type="datetime-local"
+              value={start}
+              onChange={(e) => setStart(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">End</label>
+            <input
+              type="datetime-local"
+              value={end}
+              onChange={(e) => setEnd(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md"
+              rows={3}
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            {event?.id && (
+              <button
+                type="button"
+                onClick={onDelete}
+                className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-md"
+              >
+                Delete
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-primary-600 text-white hover:bg-primary-700 rounded-md"
+            >
+              Save
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
 }
 
 export default function Calendar() {
-  const [events, setEvents] = useState<CalendarEvent[]>([])
-  const [isCreating, setIsCreating] = useState(false)
-  const [newEvent, setNewEvent] = useState({
-    summary: '',
-    description: '',
-    start: '',
-    end: '',
-  })
+  const [events, setEvents] = useState<EventInput[]>([])
+  const [selectedEvent, setSelectedEvent] = useState<EventInput | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     fetchEvents()
@@ -33,134 +137,110 @@ export default function Calendar() {
   const fetchEvents = async () => {
     try {
       const response = await axios.get('http://localhost:3000/api/calendar/events')
-      setEvents(response.data)
+      const formattedEvents = response.data.map((event: any) => ({
+        id: event.id,
+        title: event.summary,
+        start: event.start.dateTime || event.start.date,
+        end: event.end.dateTime || event.end.date,
+        description: event.description
+      }))
+      setEvents(formattedEvents)
     } catch (error) {
       console.error('Error fetching events:', error)
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const createEvent = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleDateSelect = (selectInfo: DateSelectArg) => {
+    setSelectedEvent({
+      title: '',
+      start: selectInfo.startStr,
+      end: selectInfo.endStr,
+      description: ''
+    })
+    setIsModalOpen(true)
+  }
+
+  const handleEventClick = (clickInfo: EventClickArg) => {
+    setSelectedEvent({
+      id: clickInfo.event.id,
+      title: clickInfo.event.title,
+      start: clickInfo.event.startStr,
+      end: clickInfo.event.endStr,
+      description: clickInfo.event.extendedProps.description
+    })
+    setIsModalOpen(true)
+  }
+
+  const handleSaveEvent = async (eventData: Omit<EventInput, 'id'>) => {
     try {
-      await axios.post('http://localhost:3000/api/calendar/events', newEvent)
-      setIsCreating(false)
-      setNewEvent({ summary: '', description: '', start: '', end: '' })
+      if (selectedEvent?.id) {
+        // Update existing event
+        await axios.patch(`http://localhost:3000/api/calendar/events/${selectedEvent.id}`, eventData)
+      } else {
+        // Create new event
+        await axios.post('http://localhost:3000/api/calendar/events', eventData)
+      }
       fetchEvents()
     } catch (error) {
-      console.error('Error creating event:', error)
+      console.error('Error saving event:', error)
+    }
+  }
+
+  const handleDeleteEvent = async () => {
+    if (!selectedEvent?.id) return
+
+    try {
+      await axios.delete(`http://localhost:3000/api/calendar/events/${selectedEvent.id}`)
+      fetchEvents()
+      setIsModalOpen(false)
+    } catch (error) {
+      console.error('Error deleting event:', error)
     }
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Calendar</h1>
-        <button
-          onClick={() => setIsCreating(true)}
-          className="btn btn-primary flex items-center gap-2"
-        >
-          <PlusIcon className="w-5 h-5" />
-          New Event
-        </button>
-      </div>
-
-      {/* Event Creation Modal */}
-      {isCreating && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Create New Event</h2>
-            <form onSubmit={createEvent} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Title</label>
-                <input
-                  type="text"
-                  value={newEvent.summary}
-                  onChange={(e) => setNewEvent({ ...newEvent, summary: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Description</label>
-                <textarea
-                  value={newEvent.description}
-                  onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
-                  rows={3}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Start</label>
-                <input
-                  type="datetime-local"
-                  value={newEvent.start}
-                  onChange={(e) => setNewEvent({ ...newEvent, start: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">End</label>
-                <input
-                  type="datetime-local"
-                  value={newEvent.end}
-                  onChange={(e) => setNewEvent({ ...newEvent, end: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
-                  required
-                />
-              </div>
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsCreating(false)}
-                  className="btn btn-secondary"
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Create Event
-                </button>
-              </div>
-            </form>
+    <div className="p-6 relative">
+      <div className="bg-white rounded-lg shadow p-6">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-96">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
           </div>
-        </div>
-      )}
-
-      {/* Events List */}
-      <div className="space-y-4">
-        {events.map((event) => (
-          <div
-            key={event.id}
-            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-start gap-4">
-              <div className="p-2 bg-primary-100 rounded-lg">
-                <CalendarIcon className="w-6 h-6 text-primary-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-lg">{event.summary}</h3>
-                {event.description && (
-                  <p className="text-gray-600 mt-1">{event.description}</p>
-                )}
-                <div className="flex gap-4 mt-2 text-sm text-gray-500">
-                  <span>
-                    {new Date(event.start.dateTime).toLocaleString()}
-                  </span>
-                  <span>to</span>
-                  <span>
-                    {new Date(event.end.dateTime).toLocaleString()}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-        {events.length === 0 && (
-          <div className="text-center py-12 text-gray-500">
-            No events found. Create one to get started!
+        ) : (
+          <div className="calendar-container">
+            <FullCalendar
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+              headerToolbar={{
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+              }}
+              initialView="dayGridMonth"
+              editable={true}
+              selectable={true}
+              selectMirror={true}
+              dayMaxEvents={true}
+              weekends={true}
+              events={events}
+              select={handleDateSelect}
+              eventClick={handleEventClick}
+              height="auto"
+            />
           </div>
         )}
       </div>
+
+      <EventModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false)
+          setSelectedEvent(null)
+        }}
+        event={selectedEvent as any}
+        onSave={handleSaveEvent}
+        onDelete={selectedEvent?.id ? handleDeleteEvent : undefined}
+      />
     </div>
   )
 } 

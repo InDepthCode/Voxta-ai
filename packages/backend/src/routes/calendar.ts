@@ -3,6 +3,7 @@ import { google } from 'googleapis'
 import { oauth2Client } from '../config/passport'
 
 const router = express.Router()
+const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
 
 // Middleware to check if user is authenticated
 const isAuthenticated = (req, res, next) => {
@@ -12,14 +13,13 @@ const isAuthenticated = (req, res, next) => {
   next()
 }
 
-// Get calendar events
-router.get('/events', isAuthenticated, async (req, res) => {
+// Get all events
+router.get('/events', async (req, res) => {
   try {
-    const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
     const response = await calendar.events.list({
       calendarId: 'primary',
       timeMin: new Date().toISOString(),
-      maxResults: 10,
+      maxResults: 100,
       singleEvents: true,
       orderBy: 'startTime',
     })
@@ -27,42 +27,86 @@ router.get('/events', isAuthenticated, async (req, res) => {
     res.json(response.data.items)
   } catch (error) {
     console.error('Error fetching calendar events:', error)
-    res.status(500).json({ error: 'Failed to fetch calendar events' })
+    res.status(500).json({ error: 'Failed to fetch events' })
   }
 })
 
-// Create calendar event
+// Create new event
 router.post('/events', async (req, res) => {
   try {
-    const { summary, description, start, end } = req.body
+    const { title, start, end, extendedProps } = req.body
 
-    const auth = new google.auth.OAuth2()
-    auth.setCredentials({
-      access_token: (req.user as any)?.accessToken,
-    })
-
-    const calendar = google.calendar({ version: 'v3', auth })
-    
-    const event = await calendar.events.insert({
-      calendarId: 'primary',
-      requestBody: {
-        summary,
-        description,
-        start: {
-          dateTime: start,
-          timeZone: 'UTC',
-        },
-        end: {
-          dateTime: end,
-          timeZone: 'UTC',
-        },
+    const event = {
+      summary: title,
+      description: extendedProps?.description,
+      start: {
+        dateTime: new Date(start).toISOString(),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
       },
+      end: {
+        dateTime: new Date(end).toISOString(),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      }
+    }
+
+    const response = await calendar.events.insert({
+      calendarId: 'primary',
+      requestBody: event
     })
 
-    res.json(event.data)
+    res.status(201).json(response.data)
   } catch (error) {
     console.error('Error creating calendar event:', error)
-    res.status(500).json({ error: 'Failed to create calendar event' })
+    res.status(500).json({ error: 'Failed to create event' })
+  }
+})
+
+// Update event
+router.patch('/events/:eventId', async (req, res) => {
+  try {
+    const { title, start, end, extendedProps } = req.body
+    const { eventId } = req.params
+
+    const event = {
+      summary: title,
+      description: extendedProps?.description,
+      start: {
+        dateTime: new Date(start).toISOString(),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      },
+      end: {
+        dateTime: new Date(end).toISOString(),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      }
+    }
+
+    const response = await calendar.events.update({
+      calendarId: 'primary',
+      eventId,
+      requestBody: event
+    })
+
+    res.json(response.data)
+  } catch (error) {
+    console.error('Error updating calendar event:', error)
+    res.status(500).json({ error: 'Failed to update event' })
+  }
+})
+
+// Delete event
+router.delete('/events/:eventId', async (req, res) => {
+  try {
+    const { eventId } = req.params
+
+    await calendar.events.delete({
+      calendarId: 'primary',
+      eventId
+    })
+
+    res.status(204).send()
+  } catch (error) {
+    console.error('Error deleting calendar event:', error)
+    res.status(500).json({ error: 'Failed to delete event' })
   }
 })
 
