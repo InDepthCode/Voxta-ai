@@ -116,7 +116,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)]">
+    <div className="flex flex-col lg:flex-row h-screen">
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col h-full">
         {/* Chat Container */}
@@ -160,7 +160,7 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Input Area */}
+        {/* Chat Input */}
         <div className="p-4 bg-white dark:bg-dark-800 border-t dark:border-dark-700">
           <form onSubmit={handleSubmit} className="flex items-center gap-4">
             <button

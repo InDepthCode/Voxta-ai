@@ -137,71 +137,71 @@ export default function Email() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
       </div>
     )
   }
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-screen">
       {/* Email List */}
-      <div className="w-full lg:w-96 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-6 border-b border-gray-200">
-          <h1 className="text-xl font-semibold text-gray-900">Inbox</h1>
+      <div className="w-96 border-r border-gray-200 dark:border-dark-700 bg-white dark:bg-dark-800">
+        <div className="p-6 border-b border-gray-200 dark:border-dark-700">
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Inbox</h1>
         </div>
-        <div className="overflow-y-auto h-[calc(100vh-8rem)]">
+        <div className="overflow-y-auto" style={{ height: "calc(100% - 88px)" }}>
           {emails.map((email) => (
             <button
               key={email.id}
               onClick={() => setSelectedEmail(email)}
-              className={`flex items-start gap-4 p-4 w-full text-left transition-colors hover:bg-gray-50 ${
-                selectedEmail?.id === email.id ? 'bg-primary-50' : ''
+              className={`flex items-start gap-4 p-4 w-full text-left transition-colors hover:bg-gray-50 dark:hover:bg-dark-700 ${
+                selectedEmail?.id === email.id ? 'bg-primary-50 dark:bg-primary-900/20' : ''
               }`}
             >
-              <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center p-2">
+              <div className="w-10 h-10 rounded-full bg-primary-50 dark:bg-primary-900/50 flex items-center justify-center p-2">
                 <img src="/voxta-logo.svg" alt="Sender" className="w-full h-full" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <h3 className="font-medium text-gray-900 truncate">
+                  <h3 className="font-medium text-gray-900 dark:text-white truncate">
                     {getEmailHeader(email, 'from')}
                   </h3>
-                  <span className="text-sm text-gray-500 whitespace-nowrap">
+                  <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                     {formatDate(getEmailHeader(email, 'date'))}
                   </span>
                 </div>
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                   {getEmailHeader(email, 'subject')}
                 </p>
-                <p className="text-sm text-gray-500 truncate">{email.snippet}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{email.snippet}</p>
               </div>
             </button>
           ))}
           {emails.length === 0 && (
             <div className="p-8 text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-                <EnvelopeIcon className="w-8 h-8 text-gray-400" />
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-dark-700 mb-4">
+                <EnvelopeIcon className="w-8 h-8 text-gray-400 dark:text-gray-500" />
               </div>
-              <p className="text-gray-500 font-medium">No emails found</p>
+              <p className="text-gray-500 dark:text-gray-400 font-medium">No emails found</p>
             </div>
           )}
         </div>
       </div>
 
       {/* Email Content */}
-      <div className="hidden lg:block flex-1 bg-gray-50 overflow-y-auto h-[calc(100vh-4rem)]">
+      <div className="hidden lg:block flex-1 bg-gray-50 dark:bg-dark-900 overflow-y-auto h-full">
         {selectedEmail ? (
           <div className="p-8">
-            <div className="bg-white rounded-xl shadow-sm p-8">
+            <div className="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-8">
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-semibold text-gray-900">
+                <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
                   {getEmailHeader(selectedEmail, 'subject')}
                 </h2>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => handleStarEmail(selectedEmail.id)}
-                    className="text-gray-400 hover:text-yellow-400 transition-colors p-2 rounded-lg hover:bg-gray-100"
+                    className="text-gray-400 hover:text-yellow-400 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700"
                   >
                     {selectedEmail.labelIds?.includes('STARRED') ? (
                       <StarIconSolid className="w-6 h-6 text-yellow-400" />
@@ -211,27 +211,27 @@ export default function Email() {
                   </button>
                   <button
                     onClick={() => handleDeleteEmail(selectedEmail.id)}
-                    className="text-gray-400 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-gray-100"
+                    className="text-gray-400 hover:text-red-600 dark:hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700"
                   >
                     <TrashIcon className="w-6 h-6" />
                   </button>
                 </div>
               </div>
-              <div className="flex items-center justify-between text-sm text-gray-500 mb-8 pb-8 border-b">
+              <div className="mb-6">
                 <div className="space-y-1">
                   <p className="flex items-center gap-2">
-                    <span className="text-gray-400">From:</span>
-                    <span className="text-gray-900 font-medium">{getEmailHeader(selectedEmail, 'from')}</span>
+                    <span className="text-gray-400 dark:text-gray-500">From:</span>
+                    <span className="text-gray-900 dark:text-white font-medium">{getEmailHeader(selectedEmail, 'from')}</span>
                   </p>
                   <p className="flex items-center gap-2">
-                    <span className="text-gray-400">Date:</span>
-                    <span className="text-gray-900">{new Date(getEmailHeader(selectedEmail, 'date')).toLocaleString()}</span>
+                    <span className="text-gray-400 dark:text-gray-500">Date:</span>
+                    <span className="text-gray-900 dark:text-white">{new Date(getEmailHeader(selectedEmail, 'date')).toLocaleString()}</span>
                   </p>
                 </div>
               </div>
-              <div className="prose max-w-none">
-                <p className="text-gray-900 leading-relaxed">{selectedEmail.snippet}</p>
-                <p className="text-gray-500 mt-8 pt-8 border-t">
+              <div className="prose dark:prose-invert max-w-none">
+                <p className="text-gray-900 dark:text-gray-100 leading-relaxed">{selectedEmail.snippet}</p>
+                <p className="text-gray-500 dark:text-gray-400 mt-8 pt-8 border-t dark:border-dark-700">
                   [Email content truncated in development mode]
                 </p>
               </div>
@@ -240,10 +240,10 @@ export default function Email() {
         ) : (
           <div className="h-full flex items-center justify-center text-center p-8">
             <div>
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 mb-4">
-                <EnvelopeIcon className="w-10 h-10 text-gray-400" />
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 dark:bg-dark-700 mb-4">
+                <EnvelopeIcon className="w-10 h-10 text-gray-400 dark:text-gray-500" />
               </div>
-              <p className="text-gray-500 font-medium">Select an email to view its content</p>
+              <p className="text-gray-500 dark:text-gray-400 font-medium">Select an email to view its content</p>
             </div>
           </div>
         )}

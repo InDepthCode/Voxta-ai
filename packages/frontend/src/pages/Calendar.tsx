@@ -53,56 +53,56 @@ function EventModal({ isOpen, onClose, event, onSave, onDelete }: EventModalProp
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-xl font-bold mb-4">
+      <div className="bg-white dark:bg-dark-800 rounded-lg p-6 w-full max-w-md">
+        <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
           {event?.id ? 'Edit Event' : 'Create Event'}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Title</label>
+            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Title</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full px-3 py-2 border rounded-md bg-white dark:bg-dark-700 text-gray-900 dark:text-white border-gray-300 dark:border-dark-600 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-400 dark:focus:border-primary-400"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Start</label>
+            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Start</label>
             <input
               type="datetime-local"
               value={start}
               onChange={(e) => setStart(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full px-3 py-2 border rounded-md bg-white dark:bg-dark-700 text-gray-900 dark:text-white border-gray-300 dark:border-dark-600 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-400 dark:focus:border-primary-400"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">End</label>
+            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">End</label>
             <input
               type="datetime-local"
               value={end}
               onChange={(e) => setEnd(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full px-3 py-2 border rounded-md bg-white dark:bg-dark-700 text-gray-900 dark:text-white border-gray-300 dark:border-dark-600 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-400 dark:focus:border-primary-400"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Description</label>
+            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full px-3 py-2 border rounded-md bg-white dark:bg-dark-700 text-gray-900 dark:text-white border-gray-300 dark:border-dark-600 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-400 dark:focus:border-primary-400"
               rows={3}
             />
           </div>
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-3 mt-6">
             {event?.id && (
               <button
                 type="button"
                 onClick={onDelete}
-                className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-md"
+                className="px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md"
               >
                 Delete
               </button>
@@ -110,13 +110,13 @@ function EventModal({ isOpen, onClose, event, onSave, onDelete }: EventModalProp
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md"
+              className="px-4 py-2 bg-gray-100 dark:bg-dark-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-600 rounded-md"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-primary-600 text-white hover:bg-primary-700 rounded-md"
+              className="px-4 py-2 bg-primary-600 text-white hover:bg-primary-700 dark:hover:bg-primary-500 rounded-md"
             >
               Save
             </button>
@@ -239,14 +239,14 @@ export default function Calendar() {
   }
 
   return (
-    <div className="p-6 relative">
-      <div className="bg-white rounded-lg shadow p-6">
+    <div className="h-screen p-6">
+      <div className="h-full bg-white dark:bg-dark-800 rounded-lg shadow p-6">
         {isLoading ? (
-          <div className="flex items-center justify-center h-96">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+          <div className="flex items-center justify-center h-full">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 dark:border-primary-400"></div>
           </div>
         ) : (
-          <div className="calendar-container">
+          <div className="calendar-container h-full">
             <FullCalendar
               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
               headerToolbar={{
@@ -263,7 +263,7 @@ export default function Calendar() {
               events={events}
               select={handleDateSelect}
               eventClick={handleEventClick}
-              height="auto"
+              height="100%"
             />
           </div>
         )}

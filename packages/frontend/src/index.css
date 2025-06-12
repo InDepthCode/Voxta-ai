@@ -32,7 +32,7 @@
   }
 
   .btn-secondary {
-    @apply bg-white text-gray-700 hover:bg-gray-50 focus:ring-primary-500 border border-gray-200 shadow-sm;
+    @apply bg-white dark:bg-dark-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 focus:ring-primary-500 border border-gray-200 dark:border-dark-600 shadow-sm;
   }
 
   .calendar-container .fc {
@@ -40,7 +40,7 @@
   }
 
   .calendar-container .fc-toolbar-title {
-    @apply text-xl font-semibold text-gray-900;
+    @apply text-xl font-semibold text-gray-900 dark:text-white;
   }
 
   .calendar-container .fc-button {
@@ -64,26 +64,26 @@
   }
 
   .calendar-container .fc-day-today {
-    @apply bg-primary-50/50 !important;
+    @apply bg-primary-50/50 dark:bg-primary-900/20 !important;
   }
 
   .calendar-container .fc-daygrid-day-number,
   .calendar-container .fc-col-header-cell-cushion {
-    @apply text-gray-900 hover:text-primary-600 no-underline transition-colors;
+    @apply text-gray-900 dark:text-gray-100 hover:text-primary-600 dark:hover:text-primary-400 no-underline transition-colors;
   }
 
   .calendar-container .fc-day-other {
-    @apply bg-gray-50/50;
+    @apply bg-gray-50/50 dark:bg-dark-800/50;
   }
 
   .calendar-container .fc-day-other .fc-daygrid-day-number {
-    @apply text-gray-400;
+    @apply text-gray-400 dark:text-gray-600;
   }
 }
 
 /* Calendar Styles */
 .calendar-container {
-  @apply bg-white rounded-xl shadow-sm p-6;
+  @apply bg-white dark:bg-dark-800 rounded-xl shadow-sm p-6;
 }
 
 .fc {
@@ -104,7 +104,7 @@
 }
 
 .fc .fc-daygrid-day:hover {
-  @apply bg-gray-50/75 transition-colors;
+  @apply bg-gray-50/75 dark:bg-dark-700/50 transition-colors;
 }
 
 .fc .fc-event {

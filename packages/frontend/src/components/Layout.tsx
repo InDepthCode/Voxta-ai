@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   HomeIcon,
@@ -7,8 +7,11 @@ import {
   Bars3Icon,
   XMarkIcon,
   UserCircleIcon,
+  CommandLineIcon,
 } from '@heroicons/react/24/outline'
 import DarkModeToggle from './DarkModeToggle'
+import CommandPrompt from './CommandPrompt'
+import { toast } from 'react-hot-toast'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -25,7 +28,22 @@ const baseUrl = import.meta.env.BASE_URL
 
 export default function Layout({ children }: LayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isCommandPromptOpen, setIsCommandPromptOpen] = useState(false)
   const location = useLocation()
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Command/Ctrl + K to open command prompt
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setIsCommandPromptOpen(true)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-dark-900 transition-colors">
@@ -37,6 +55,12 @@ export default function Layout({ children }: LayoutProps) {
             <span className="text-xl font-bold text-gray-900 dark:text-white">Voxta</span>
           </Link>
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsCommandPromptOpen(true)}
+              className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700"
+            >
+              <CommandLineIcon className="h-6 w-6" />
+            </button>
             <DarkModeToggle />
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -79,7 +103,7 @@ export default function Layout({ children }: LayoutProps) {
       </div>
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-72 lg:flex-col">
+      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-72">
         <div className="flex flex-col flex-1 min-h-0 bg-white dark:bg-dark-800 border-r border-gray-200 dark:border-dark-700">
           <div className="flex h-16 flex-shrink-0 items-center gap-3 px-6 border-b dark:border-dark-700">
             <img src={baseUrl + 'voxta-logo.svg'} alt="Voxta" className="h-9 w-9 transition-transform hover:scale-105" />
@@ -134,7 +158,16 @@ export default function Layout({ children }: LayoutProps) {
                     </p>
                   </div>
                 </div>
-                <DarkModeToggle />
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsCommandPromptOpen(true)}
+                    className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700"
+                    title="Command Prompt (⌘K)"
+                  >
+                    <CommandLineIcon className="h-5 w-5" />
+                  </button>
+                  <DarkModeToggle />
+                </div>
               </div>
             </div>
           </nav>
@@ -147,6 +180,12 @@ export default function Layout({ children }: LayoutProps) {
           {children}
         </main>
       </div>
+
+      {/* Command Prompt */}
+      <CommandPrompt
+        isOpen={isCommandPromptOpen}
+        onClose={() => setIsCommandPromptOpen(false)}
+      />
     </div>
   )
-} 
+}
