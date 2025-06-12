@@ -1,26 +1,37 @@
 import express from 'express'
 import OpenAI from 'openai'
+import { isAuthenticated } from '../middleware/auth'
 
-const router = express.Router()
+const aiRouter = express.Router()
 
 // Initialize OpenAI only if API key is available
 let openai: OpenAI | null = null
-if (process.env.OPENAI_API_KEY) {
-  openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  })
+try {
+  if (process.env.OPENAI_API_KEY) {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+    console.log('OpenAI API initialized successfully')
+  } else {
+    console.warn('OpenAI API key not found. AI features will be disabled.')
+  }
+} catch (error) {
+  console.error('Error initializing OpenAI:', error)
 }
 
 // Process user message
-router.post('/chat', async (req, res) => {
+aiRouter.post('/chat', process.env.NODE_ENV === 'production' ? isAuthenticated : (req, res, next) => next(), async (req, res) => {
   try {
     const { message } = req.body
 
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({ error: 'Message is required and must be a string' })
+    }
+
     if (!openai) {
       // Return a mock response if OpenAI is not configured
-      return res.json({
-        message: "I'm sorry, but I'm currently in development mode and can't process your request. Please configure OpenAI API key to enable AI features.",
-        actions: [],
+      return res.status(503).json({
+        error: 'AI service is currently unavailable. Please check your OpenAI API key configuration.'
       })
     }
 
@@ -46,10 +57,12 @@ router.post('/chat', async (req, res) => {
       message: aiResponse,
       actions: [], // Add extracted actions here
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error processing message:', error)
-    res.status(500).json({ error: 'Failed to process message' })
+    res.status(500).json({ 
+      error: error.response?.data?.error || error.message || 'Failed to process message'
+    })
   }
 })
 
-export default router 
+export { aiRouter } 

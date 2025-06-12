@@ -4,52 +4,36 @@ import { OAuth2Client } from 'google-auth-library'
 
 // Initialize OAuth2Client for reuse across routes
 export const oauth2Client = new OAuth2Client({
-  clientId: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  redirectUri: 'http://localhost:3000/api/auth/google/callback'
+  clientId: process.env.GOOGLE_CLIENT_ID || 'dummy_id',
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'dummy_secret',
+  redirectUri: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/auth/google/callback'
 })
 
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      callbackURL: 'http://localhost:3000/api/auth/google/callback',
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        // Store tokens in oauth2Client
-        oauth2Client.setCredentials({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        })
+// Passport session setup
+passport.serializeUser((user: any, done) => {
+  done(null, user)
+})
 
-        // Create user object
-        const user = {
-          id: profile.id,
-          email: profile.emails?.[0]?.value,
-          name: profile.displayName,
-          picture: profile.photos?.[0]?.value,
-          accessToken,
-          refreshToken,
-        }
+passport.deserializeUser((user: any, done) => {
+  done(null, user)
+})
 
-        return done(null, user)
-      } catch (error) {
-        return done(error as Error)
-      }
+// Only configure Google OAuth if credentials are available
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/auth/google/callback',
+  }, async (accessToken, refreshToken, profile, done) => {
+    try {
+      // TODO: Save user to database
+      return done(null, { ...profile, accessToken, refreshToken })
+    } catch (error) {
+      return done(error as Error)
     }
-  )
-)
-
-// Serialize user for the session
-passport.serializeUser((user, done) => {
-  done(null, user)
-})
-
-// Deserialize user from the session
-passport.deserializeUser((user, done) => {
-  done(null, user)
-})
+  }))
+} else {
+  console.warn('Google OAuth credentials not found. Authentication will be disabled.')
+}
 
 export default passport 
