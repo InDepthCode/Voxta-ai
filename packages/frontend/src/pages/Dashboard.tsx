@@ -4,6 +4,13 @@ import { MicrophoneIcon, PaperAirplaneIcon, CalendarIcon, EnvelopeIcon } from '@
 import { UserCircleIcon } from '@heroicons/react/24/solid'
 import axios from '../config/axios'
 
+interface Message {
+  id: string
+  content: string
+  role: 'user' | 'assistant'
+  timestamp: Date
+}
+
 interface CalendarEvent {
   id: string
   summary: string
@@ -21,270 +28,204 @@ interface EmailMessage {
   }
 }
 
+// Sample data for demonstration
+const upcomingEvents = [
+  {
+    id: '1',
+    title: 'Team Meeting',
+    time: '10:00 AM Today',
+    attendees: [
+      'https://ui-avatars.com/api/?name=John+Doe&background=random',
+      'https://ui-avatars.com/api/?name=Jane+Smith&background=random',
+      'https://ui-avatars.com/api/?name=Mike+Johnson&background=random',
+    ],
+  },
+  {
+    id: '2',
+    title: 'Project Review',
+    time: '2:00 PM Tomorrow',
+    attendees: [
+      'https://ui-avatars.com/api/?name=Sarah+Wilson&background=random',
+      'https://ui-avatars.com/api/?name=Alex+Brown&background=random',
+    ],
+  },
+]
+
+const recentEmails = [
+  {
+    id: '1',
+    subject: 'Project Updates',
+    from: 'john.doe@example.com',
+  },
+  {
+    id: '2',
+    subject: 'Meeting Rescheduled',
+    from: 'calendar@company.com',
+  },
+]
+
 export default function Dashboard() {
-  const [isListening, setIsListening] = useState(false)
-  const [message, setMessage] = useState('')
-  const [messages, setMessages] = useState<Array<{ text: string; isUser: boolean; timestamp: Date }>>([
+  const [messages, setMessages] = useState<Message[]>([
     {
-      text: "👋 Hi! I'm Voxta, your AI assistant. I'm here to help you manage your calendar, emails, and tasks. Since I'm in development mode, some features might be limited, but feel free to chat with me!",
-      isUser: false,
+      id: '1',
+      content: "👋 Hi! I'm Voxta, your AI assistant. I'm here to help you manage your calendar, emails, and tasks. Since I'm in development mode, some features might be limited, but feel free to chat with me!",
+      role: 'assistant',
       timestamp: new Date()
     }
   ])
-  const [upcomingEvents, setUpcomingEvents] = useState<CalendarEvent[]>([])
-  const [recentEmails, setRecentEmails] = useState<EmailMessage[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [isTyping, setIsTyping] = useState(false)
+  const [input, setInput] = useState('')
+  const [isListening, setIsListening] = useState(false)
   const chatContainerRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
 
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
-    fetchUpcomingEvents()
-    fetchRecentEmails()
-  }, [])
-
-  useEffect(() => {
-    // Scroll to bottom when new messages are added
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
     }
   }, [messages])
 
-  const fetchUpcomingEvents = async () => {
-    try {
-      const response = await axios.get('/api/calendar/events')
-      setUpcomingEvents(response.data.slice(0, 3))
-    } catch (error) {
-      console.error('Error fetching events:', error)
-      // Set placeholder data for development
-      setUpcomingEvents([
-        {
-          id: '1',
-          summary: 'Team Meeting',
-          start: { dateTime: new Date().toISOString() }
-        },
-        {
-          id: '2',
-          summary: 'Project Review',
-          start: { dateTime: new Date(Date.now() + 86400000).toISOString() }
-        }
-      ])
-    }
-  }
-
-  const fetchRecentEmails = async () => {
-    try {
-      const response = await axios.get('/api/email/messages')
-      setRecentEmails(response.data.slice(0, 3))
-    } catch (error) {
-      console.error('Error fetching emails:', error)
-      // Set placeholder data for development
-      setRecentEmails([
-        {
-          id: '1',
-          snippet: 'Here are the project updates you requested...',
-          payload: {
-            headers: [
-              { name: 'subject', value: 'Project Updates' },
-              { name: 'from', value: 'john.doe@example.com' }
-            ]
-          }
-        },
-        {
-          id: '2',
-          snippet: 'The meeting has been rescheduled to...',
-          payload: {
-            headers: [
-              { name: 'subject', value: 'Meeting Rescheduled' },
-              { name: 'from', value: 'calendar@company.com' }
-            ]
-          }
-        }
-      ])
-    }
-  }
-
-  const startListening = () => {
-    if ('webkitSpeechRecognition' in window) {
-      const recognition = new (window as any).webkitSpeechRecognition()
-      recognition.continuous = false
-      recognition.interimResults = false
-
-      recognition.onstart = () => {
-        setIsListening(true)
-      }
-
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript
-        setMessage(transcript)
-        setIsListening(false)
-      }
-
-      recognition.onerror = () => {
-        setIsListening(false)
-      }
-
-      recognition.onend = () => {
-        setIsListening(false)
-      }
-
-      recognition.start()
-    } else {
-      alert('Speech recognition is not supported in this browser.')
-    }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!message.trim()) return
+    if (!input.trim() && !isListening) return
 
-    const timestamp = new Date()
-    setMessages(prev => [...prev, { text: message, isUser: true, timestamp }])
-    setMessage('')
-    setIsLoading(true)
-    setIsTyping(true)
-    
-    try {
-      const response = await axios.post('/api/ai/chat', { message })
-      setIsTyping(false)
-      setMessages(prev => [...prev, { text: response.data.message, isUser: false, timestamp: new Date() }])
-      
-      if (response.data.actions?.length > 0) {
-        fetchUpcomingEvents()
-        fetchRecentEmails()
-      }
-    } catch (error: any) {
-      console.error('Error processing message:', error)
-      setIsTyping(false)
-      setMessages(prev => [...prev, { 
-        text: "I understand you're trying to interact with me. Since I'm in development mode, I can't perform all actions yet. But I'm here to chat and help you understand how I can assist you once fully implemented!", 
-        isUser: false,
-        timestamp: new Date()
-      }])
-    } finally {
-      setIsLoading(false)
+    // Add user message
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: input,
+      role: 'user',
+      timestamp: new Date()
     }
+    setMessages(prev => [...prev, userMessage])
+
+    // Add assistant response
+    setTimeout(() => {
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "I'm in development mode, but I'll be able to help you with that soon!",
+        role: 'assistant',
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, assistantMessage])
+    }, 1000)
+
+    setInput('')
   }
 
-  const getEmailHeader = (message: EmailMessage, name: string) => {
-    return message.payload.headers.find(h => h.name.toLowerCase() === name.toLowerCase())?.value || ''
-  }
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const toggleListening = () => {
+    setIsListening(!isListening)
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 p-6 h-full">
-      {/* Chat Section */}
-      <div className="flex-1 flex flex-col min-h-0">
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)]">
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col h-full">
+        {/* Chat Container */}
         <div 
           ref={chatContainerRef}
-          className="flex-1 overflow-y-auto p-6 space-y-6 bg-white rounded-xl shadow-sm mb-6 scroll-smooth"
+          className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-dark-900"
         >
-          {messages.map((msg, idx) => (
+          {messages.map((message) => (
             <div
-              key={idx}
-              className={`flex flex-col ${msg.isUser ? 'items-end' : 'items-start'} space-y-1`}
+              key={message.id}
+              className={`flex items-start gap-3 ${
+                message.role === 'user' ? 'flex-row-reverse' : ''
+              }`}
             >
-              <div className="flex items-end gap-2">
-                {!msg.isUser && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
-                    <img src="/voxta-logo.svg" alt="Voxta" className="w-5 h-5" />
-                  </div>
-                )}
-                <div
-                  className={`max-w-[70%] rounded-2xl px-5 py-3 ${
-                    msg.isUser
-                      ? 'bg-primary-600 text-white shadow-sm ml-4'
-                      : 'bg-gray-50 text-gray-900 shadow-sm mr-4'
-                  } transform transition-all duration-200 ease-out animate-fade-in`}
-                >
-                  {msg.text}
+              {message.role === 'user' ? (
+                <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center">
+                  <UserCircleIcon className="w-6 h-6 text-white" />
                 </div>
-                {msg.isUser && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
-                    <UserCircleIcon className="w-5 h-5 text-primary-600" />
-                  </div>
-                )}
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center">
+                  <img src={import.meta.env.BASE_URL + 'voxta-logo.svg'} alt="Voxta" className="w-6 h-6" />
+                </div>
+              )}
+              <div
+                className={`relative max-w-[80%] rounded-2xl px-4 py-2 ${
+                  message.role === 'user'
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-white dark:bg-dark-800 text-gray-900 dark:text-white'
+                }`}
+              >
+                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                <span 
+                  className={`absolute bottom-0 translate-y-full mt-1 text-xs text-gray-400 dark:text-gray-500 ${
+                    message.role === 'user' ? 'right-0' : 'left-0'
+                  }`}
+                >
+                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
               </div>
-              <span className="text-xs text-gray-400">
-                {formatTime(msg.timestamp)}
-              </span>
             </div>
           ))}
-          {isTyping && (
-            <div className="flex items-center gap-2">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
-                <img src="/voxta-logo.svg" alt="Voxta" className="w-5 h-5" />
-              </div>
-              <div className="bg-gray-50 rounded-2xl px-5 py-3 shadow-sm">
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                </div>
-              </div>
-            </div>
-          )}
         </div>
-        <form onSubmit={handleSubmit} className="flex gap-4">
-          <button
-            type="button"
-            onClick={startListening}
-            disabled={isListening}
-            className={`flex-shrink-0 p-3 rounded-xl border ${
-              isListening
-                ? 'bg-primary-50 border-primary-200 text-primary-600'
-                : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-            } transition-colors`}
-          >
-            <MicrophoneIcon className="w-5 h-5" />
-          </button>
-          <div className="flex-1 flex items-center gap-4 px-4 py-2 bg-white border border-gray-200 rounded-xl focus-within:border-primary-300 focus-within:ring-4 focus-within:ring-primary-100 transition-all">
+
+        {/* Input Area */}
+        <div className="p-4 bg-white dark:bg-dark-800 border-t dark:border-dark-700">
+          <form onSubmit={handleSubmit} className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={toggleListening}
+              className={`p-3 rounded-lg transition-colors ${
+                isListening
+                  ? 'bg-red-600 text-white hover:bg-red-700'
+                  : 'bg-gray-100 dark:bg-dark-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-dark-600'
+              }`}
+            >
+              <MicrophoneIcon className="w-6 h-6" />
+            </button>
             <input
-              ref={inputRef}
               type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
               placeholder="Type your message..."
-              className="flex-1 text-gray-900 placeholder-gray-400 bg-transparent border-none focus:outline-none focus:ring-0"
+              className="flex-1 bg-gray-100 dark:bg-dark-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
             <button
               type="submit"
-              disabled={!message.trim() || isLoading}
-              className="flex-shrink-0 p-2 rounded-lg text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              disabled={!input.trim() && !isListening}
+              className="p-3 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <PaperAirplaneIcon className="w-5 h-5" />
+              <PaperAirplaneIcon className="w-6 h-6" />
             </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
 
-      {/* Sidebar */}
-      <div className="w-full lg:w-80 space-y-6">
-        {/* Calendar Events */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Upcoming Events</h2>
-            <Link
-              to="/calendar"
-              className="text-sm font-medium text-primary-600 hover:text-primary-700"
-            >
-              View all
-            </Link>
+      {/* Right Sidebar */}
+      <div className="hidden lg:block w-80 p-4 space-y-4 bg-gray-100 dark:bg-dark-800 overflow-y-auto border-l border-gray-200 dark:border-dark-700">
+        {/* Upcoming Events */}
+        <div className="bg-white dark:bg-dark-700 rounded-xl shadow-sm">
+          <div className="p-4 border-b border-gray-200 dark:border-dark-600">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Upcoming Events</h2>
+              <Link
+                to="/calendar"
+                className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+              >
+                View all
+              </Link>
+            </div>
           </div>
-          <div className="space-y-4">
+          <div className="p-4 space-y-4">
             {upcomingEvents.map((event) => (
               <div key={event.id} className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary-50 text-primary-600 flex flex-col items-center justify-center">
-                  <CalendarIcon className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-lg bg-primary-50 dark:bg-primary-900/50 flex items-center justify-center">
+                  <CalendarIcon className="w-6 h-6 text-primary-600 dark:text-primary-400" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-900">{event.summary}</h3>
-                  <p className="text-sm text-gray-500">
-                    {new Date(event.start.dateTime).toLocaleString()}
-                  </p>
+                  <h3 className="font-medium text-gray-900 dark:text-white">{event.title}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{event.time}</p>
+                  <div className="flex -space-x-2 mt-2">
+                    {event.attendees.map((avatar, i) => (
+                      <img
+                        key={i}
+                        src={avatar}
+                        alt={`Attendee ${i + 1}`}
+                        className="w-6 h-6 rounded-full border-2 border-white dark:border-dark-700"
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}
@@ -292,30 +233,27 @@ export default function Dashboard() {
         </div>
 
         {/* Recent Emails */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Emails</h2>
-            <Link
-              to="/email"
-              className="text-sm font-medium text-primary-600 hover:text-primary-700"
-            >
-              View all
-            </Link>
+        <div className="bg-white dark:bg-dark-700 rounded-xl shadow-sm">
+          <div className="p-4 border-b border-gray-200 dark:border-dark-600">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Emails</h2>
+              <Link
+                to="/email"
+                className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+              >
+                View all
+              </Link>
+            </div>
           </div>
-          <div className="space-y-4">
+          <div className="p-4 space-y-4">
             {recentEmails.map((email) => (
               <div key={email.id} className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary-50 text-primary-600 flex flex-col items-center justify-center">
-                  <EnvelopeIcon className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-lg bg-primary-50 dark:bg-primary-900/50 flex items-center justify-center">
+                  <EnvelopeIcon className="w-6 h-6 text-primary-600 dark:text-primary-400" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-900">
-                    {getEmailHeader(email, 'subject')}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    From: {getEmailHeader(email, 'from')}
-                  </p>
-                  <p className="text-sm text-gray-500 line-clamp-2">{email.snippet}</p>
+                  <h3 className="font-medium text-gray-900 dark:text-white">{email.subject}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{email.from}</p>
                 </div>
               </div>
             ))}

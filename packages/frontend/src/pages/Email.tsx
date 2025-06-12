@@ -152,54 +152,31 @@ export default function Email() {
         </div>
         <div className="overflow-y-auto h-[calc(100vh-8rem)]">
           {emails.map((email) => (
-            <div
+            <button
               key={email.id}
-              className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
+              onClick={() => setSelectedEmail(email)}
+              className={`flex items-start gap-4 p-4 w-full text-left transition-colors hover:bg-gray-50 ${
                 selectedEmail?.id === email.id ? 'bg-primary-50' : ''
               }`}
-              onClick={() => setSelectedEmail(email)}
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleStarEmail(email.id)
-                      }}
-                      className="text-gray-400 hover:text-yellow-400 transition-colors"
-                    >
-                      {email.labelIds?.includes('STARRED') ? (
-                        <StarIconSolid className="w-5 h-5 text-yellow-400" />
-                      ) : (
-                        <StarIcon className="w-5 h-5" />
-                      )}
-                    </button>
-                    <p className="font-medium text-gray-900 truncate">
-                      {getEmailHeader(email, 'from')}
-                    </p>
-                  </div>
-                  <h3 className="font-medium text-gray-900 truncate mt-1">
-                    {getEmailHeader(email, 'subject')}
+              <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center p-2">
+                <img src="/voxta-logo.svg" alt="Sender" className="w-full h-full" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="font-medium text-gray-900 truncate">
+                    {getEmailHeader(email, 'from')}
                   </h3>
-                  <p className="text-sm text-gray-600 truncate mt-1">{email.snippet}</p>
-                </div>
-                <div className="flex flex-col items-end gap-2">
                   <span className="text-sm text-gray-500 whitespace-nowrap">
                     {formatDate(getEmailHeader(email, 'date'))}
                   </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDeleteEmail(email.id)
-                    }}
-                    className="text-gray-400 hover:text-red-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
-                  >
-                    <TrashIcon className="w-5 h-5" />
-                  </button>
                 </div>
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {getEmailHeader(email, 'subject')}
+                </p>
+                <p className="text-sm text-gray-500 truncate">{email.snippet}</p>
               </div>
-            </div>
+            </button>
           ))}
           {emails.length === 0 && (
             <div className="p-8 text-center">

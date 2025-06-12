@@ -8,11 +8,10 @@ import {
   XMarkIcon,
   UserCircleIcon,
 } from '@heroicons/react/24/outline'
-import { useAuth, useUser, SignOutButton } from '@clerk/clerk-react'
+import DarkModeToggle from './DarkModeToggle'
 
 interface LayoutProps {
   children: React.ReactNode
-  isDevelopment?: boolean
 }
 
 const navigation = [
@@ -21,83 +20,27 @@ const navigation = [
   { name: 'Email', href: '/email', icon: EnvelopeIcon },
 ]
 
-export default function Layout({ children, isDevelopment = false }: LayoutProps) {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
-  const location = useLocation()
-  
-  // Only use Clerk hooks if not in development mode
-  const { isSignedIn } = isDevelopment ? { isSignedIn: true } : useAuth()
-  const { user } = isDevelopment ? { user: { fullName: 'Development User', imageUrl: '/default-avatar.svg', primaryEmailAddress: { emailAddress: 'dev@example.com' } } } : useUser()
+// Get the base URL from Vite config
+const baseUrl = import.meta.env.BASE_URL
 
-  // In development mode, treat user as signed in
-  const isUserSignedIn = isDevelopment || isSignedIn
+export default function Layout({ children }: LayoutProps) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const location = useLocation()
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-900 transition-colors">
       {/* Mobile menu */}
       <div className="lg:hidden">
-        <div className="flex items-center justify-between p-4 bg-white shadow-md">
+        <div className="flex items-center justify-between p-4 bg-white dark:bg-dark-800 shadow-md">
           <Link to="/" className="flex items-center gap-3">
-            <img src="/voxta-logo.svg" alt="Voxta" className="h-9 w-9 transition-transform hover:scale-105" />
-            <span className="text-xl font-bold text-gray-900">Voxta</span>
+            <img src={baseUrl + 'voxta-logo.svg'} alt="Voxta" className="h-9 w-9 transition-transform hover:scale-105" />
+            <span className="text-xl font-bold text-gray-900 dark:text-white">Voxta</span>
           </Link>
           <div className="flex items-center gap-4">
-            {!isUserSignedIn ? (
-              <>
-                <Link
-                  to="/sign-in"
-                  className="text-sm font-medium text-gray-700 hover:text-gray-900"
-                >
-                  Sign in
-                </Link>
-                <Link
-                  to="/sign-up"
-                  className="text-sm font-medium text-white bg-primary-600 px-4 py-2 rounded-lg hover:bg-primary-700"
-                >
-                  Sign up
-                </Link>
-              </>
-            ) : (
-              <button
-                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                className="relative"
-              >
-                <img
-                  src={user?.imageUrl || '/default-avatar.svg'}
-                  alt="Profile"
-                  className="w-8 h-8 rounded-full"
-                />
-                {isProfileMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1">
-                    <div className="px-4 py-2 border-b">
-                      <p className="text-sm font-medium text-gray-900">
-                        {user?.fullName || 'Development User'}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {user?.primaryEmailAddress?.emailAddress || 'dev@example.com'}
-                      </p>
-                    </div>
-                    <Link
-                      to="/pricing"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Upgrade Plan
-                    </Link>
-                    {!isDevelopment && (
-                      <SignOutButton>
-                        <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                          Sign out
-                        </button>
-                      </SignOutButton>
-                    )}
-                  </div>
-                )}
-              </button>
-            )}
+            <DarkModeToggle />
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 text-gray-500 hover:text-gray-900 transition-colors rounded-lg hover:bg-gray-100"
+              className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700"
             >
               {isMobileMenuOpen ? (
                 <XMarkIcon className="h-6 w-6" />
@@ -108,15 +51,15 @@ export default function Layout({ children, isDevelopment = false }: LayoutProps)
           </div>
         </div>
         {isMobileMenuOpen && (
-          <nav className="bg-white shadow-lg">
+          <nav className="bg-white dark:bg-dark-800 shadow-lg">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
                 className={`flex items-center gap-3 px-4 py-3.5 text-sm font-medium transition-colors ${
                   location.pathname === item.href
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-primary-50 dark:bg-primary-900/50 text-primary-700 dark:text-primary-100'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 hover:text-gray-900 dark:hover:text-white'
                 }`}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
@@ -126,7 +69,7 @@ export default function Layout({ children, isDevelopment = false }: LayoutProps)
             ))}
             <Link
               to="/pricing"
-              className="flex items-center gap-3 px-4 py-3.5 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+              className="flex items-center gap-3 px-4 py-3.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 hover:text-gray-900 dark:hover:text-white"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Pricing
@@ -137,10 +80,10 @@ export default function Layout({ children, isDevelopment = false }: LayoutProps)
 
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-72 lg:flex-col">
-        <div className="flex flex-col flex-1 min-h-0 bg-white border-r border-gray-200">
-          <div className="flex h-16 flex-shrink-0 items-center gap-3 px-6 border-b">
-            <img src="/voxta-logo.svg" alt="Voxta" className="h-9 w-9 transition-transform hover:scale-105" />
-            <span className="text-xl font-bold text-gray-900">Voxta</span>
+        <div className="flex flex-col flex-1 min-h-0 bg-white dark:bg-dark-800 border-r border-gray-200 dark:border-dark-700">
+          <div className="flex h-16 flex-shrink-0 items-center gap-3 px-6 border-b dark:border-dark-700">
+            <img src={baseUrl + 'voxta-logo.svg'} alt="Voxta" className="h-9 w-9 transition-transform hover:scale-105" />
+            <span className="text-xl font-bold text-gray-900 dark:text-white">Voxta</span>
           </div>
           <nav className="flex flex-1 flex-col justify-between">
             <ul role="list" className="flex flex-1 flex-col gap-y-7 px-3 py-6">
@@ -152,14 +95,14 @@ export default function Layout({ children, isDevelopment = false }: LayoutProps)
                         to={item.href}
                         className={`group flex gap-x-3 rounded-lg p-2.5 text-sm font-medium transition-colors ${
                           location.pathname === item.href
-                            ? 'bg-primary-50 text-primary-700'
-                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                            ? 'bg-primary-50 dark:bg-primary-900/50 text-primary-700 dark:text-primary-100'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 hover:text-gray-900 dark:hover:text-white'
                         }`}
                       >
                         <item.icon className={`h-5 w-5 shrink-0 ${
                           location.pathname === item.href
-                            ? 'text-primary-700'
-                            : 'text-gray-400 group-hover:text-gray-900'
+                            ? 'text-primary-700 dark:text-primary-100'
+                            : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-900 dark:group-hover:text-white'
                         }`} />
                         {item.name}
                       </Link>
@@ -168,7 +111,7 @@ export default function Layout({ children, isDevelopment = false }: LayoutProps)
                   <li>
                     <Link
                       to="/pricing"
-                      className="group flex gap-x-3 rounded-lg p-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                      className="group flex gap-x-3 rounded-lg p-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 hover:text-gray-900 dark:hover:text-white"
                     >
                       Pricing
                     </Link>
@@ -176,60 +119,24 @@ export default function Layout({ children, isDevelopment = false }: LayoutProps)
                 </ul>
               </li>
             </ul>
-            {isUserSignedIn ? (
-              <div className="p-3 border-t">
-                <button
-                  onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                  className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 relative"
-                >
-                  <img
-                    src={user?.imageUrl || '/default-avatar.svg'}
-                    alt="Profile"
-                    className="w-8 h-8 rounded-full"
-                  />
-                  <div className="flex-1 text-left">
-                    <p className="text-sm font-medium text-gray-900">
-                      {user?.fullName || 'Development User'}
+            <div className="p-3 border-t dark:border-dark-700">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center">
+                    <UserCircleIcon className="w-6 h-6 text-primary-700 dark:text-primary-100" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      Guest User
                     </p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {user?.primaryEmailAddress?.emailAddress || 'dev@example.com'}
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      guest@example.com
                     </p>
                   </div>
-                  {isProfileMenuOpen && (
-                    <div className="absolute bottom-full left-0 mb-2 w-full bg-white rounded-lg shadow-lg py-1">
-                      <Link
-                        to="/pricing"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        Upgrade Plan
-                      </Link>
-                      {!isDevelopment && (
-                        <SignOutButton>
-                          <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                            Sign out
-                          </button>
-                        </SignOutButton>
-                      )}
-                    </div>
-                  )}
-                </button>
+                </div>
+                <DarkModeToggle />
               </div>
-            ) : (
-              <div className="p-3 border-t space-y-2">
-                <Link
-                  to="/sign-in"
-                  className="block w-full text-center px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  Sign in
-                </Link>
-                <Link
-                  to="/sign-up"
-                  className="block w-full text-center px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
-                >
-                  Sign up
-                </Link>
-              </div>
-            )}
+            </div>
           </nav>
         </div>
       </div>
